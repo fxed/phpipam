@@ -10,7 +10,7 @@ require( dirname(__FILE__) . '/../../../functions/functions.php');
 # initialize user object
 $Database 	= new Database_PDO;
 $User 		= new User ($Database);
-$Admin	 	= new Admin ($Database);
+$Admin	 	= new Admin ($Database, false);
 $Tools	 	= new Tools ($Database);
 $Result 	= new Result ();
 $PowerDNS 	= new PowerDNS ($Database);
@@ -18,11 +18,13 @@ $PowerDNS 	= new PowerDNS ($Database);
 # verify that user is logged in
 $User->check_user_session();
 
+# create csrf token
+$csrf = $User->create_csrf_cookie ();
 
-// save settings for powerDNS default
+# save settings for powerDNS default
 $pdns = $PowerDNS->db_settings;
 
-// default post
+# default post
 $post = $_POST;
 
 # get record
@@ -104,7 +106,7 @@ $readonly = $_POST['action']=="delete" ? "readonly" : "";
 			<input type="hidden" name="action" value="<?php print $_POST['action']; ?>">
 			<input type="hidden" name="id" value="<?php print @$_POST['id']; ?>">
 			<input type="hidden" name="domain_id" value="<?php print @$_POST['domain_id']; ?>">
-
+            <input type="hidden" name="csrf_cookie" value="<?php print $csrf; ?>">
 		</td>
 	</tr>
 
@@ -185,6 +187,9 @@ $readonly = $_POST['action']=="delete" ? "readonly" : "";
 <div class="pFooter">
 	<div class="btn-group">
 		<button class="btn btn-sm btn-default hidePopups"><?php print _('Cancel'); ?></button>
+		<?php if($_POST['action']!=="delete") { ?>
+		<button class="btn btn-sm btn-default btn-danger" id="editRecordSubmitDelete"><i class="fa fa-trash-o"></i> <?php print _("Delete"); ?></button>
+		<?php } ?>
 		<button class="btn btn-sm btn-default <?php if($_POST['action']=="delete") { print "btn-danger"; } else { print "btn-success"; } ?>" id="editRecordSubmit"><i class="fa <?php if($_POST['action']=="add") { print "fa-plus"; } else if ($_POST['action']=="delete") { print "fa-trash-o"; } else { print "fa-check"; } ?>"></i> <?php print ucwords(_($_POST['action'])); ?></button>
 	</div>
 	<!-- result -->

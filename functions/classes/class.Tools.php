@@ -766,7 +766,41 @@ class Tools extends Common_functions {
 
 	    # return result
 	    return $search;
+	}
 
+
+	/**
+	 * Function to search vrf
+	 *
+	 * @access public
+	 * @param mixed $search_term
+	 * @return void
+	 */
+	public function search_vrfs ($search_term) {
+		# fetch custom fields
+		$custom_fields = $this->fetch_custom_fields ("vrf");
+		# query
+		$query[] = "select * from `vrf` where `name` like :search_term or `description` like :search_term or `rd` like :search_term ";
+		# custom
+	    if(sizeof($custom_fields) > 0) {
+			foreach($custom_fields as $myField) {
+				$myField['name'] = $this->Database->escape($myField['name']);
+				$query[] = " or `$myField[name]` like :search_term ";
+			}
+		}
+		$query[] = ";";
+		# join query
+		$query = implode("\n", $query);
+
+		# fetch
+		try { $search = $this->Database->getObjectsQuery($query, array("search_term"=>"%$search_term%")); }
+		catch (Exception $e) {
+			$this->Result->show("danger", _("Error: ").$e->getMessage());
+			return false;
+		}
+
+	    # return result
+	    return $search;
 	}
 
 	/**
@@ -795,8 +829,12 @@ class Tools extends Common_functions {
 		}
 		# else calculate options
 		else {
-			# if subnet is not provided maye wildcard is, so explode it to array
-			$address = array_filter(explode(".", $address));
+			# if subnet is not provided maybe wildcard is, so explode it to array
+			$address = explode(".", $address);
+            # remove empty
+            foreach($address as $k=>$a) {
+                if (strlen($a)==0)  unset($address[$k]);
+            }
 
 			# 4 pieces is ok, host
 			if (sizeof($address) == 4) {
@@ -974,7 +1012,7 @@ class Tools extends Common_functions {
 		$definition = trim(strstr($definition, ";\n", true));
 
 		# get each line to array
-		$definition = explode("\n", $definition);
+		$definition = explode(PHP_EOL, $definition);
 
 		# go through,if it begins with ` use it !
 		foreach($definition as $d) {
@@ -1161,7 +1199,7 @@ class Tools extends Common_functions {
 	 * @return void
 	 */
 	public function requests_fetch_available_subnets () {
-		try { $subnets = $this->Database->getObjectsQuery("SELECT * FROM `subnets` where `allowRequests`=1;"); }
+		try { $subnets = $this->Database->getObjectsQuery("SELECT * FROM `subnets` where `allowRequests`=1 and `isFull` != 1;"); }
 		catch (Exception $e) { $this->Result->show("danger", $e->getMessage(), false);	return false; }
 
 		# save
@@ -1534,7 +1572,7 @@ class Tools extends Common_functions {
 		$file = trim(strstr($file, "# Dump of table", true));
 
 		//get proper line
-		$file = explode("\n", $file);
+		$file = explode(PHP_EOL, $file);
 		foreach($file as $k=>$l) {
 			if(strpos(trim($l), "$field`")==1) {
 				//get previous

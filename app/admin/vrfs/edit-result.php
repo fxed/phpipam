@@ -17,6 +17,9 @@ $Result 	= new Result ();
 # verify that user is logged in
 $User->check_user_session();
 
+# validate csrf cookie
+$_POST['csrf_cookie']==$_SESSION['csrf_cookie'] ? :                      $Result->show("danger", _("Invalid CSRF cookie"), true);
+
 # fetch custom fields
 $custom = $Tools->fetch_custom_fields('vrf');
 
@@ -28,6 +31,7 @@ if($_POST['name'] == "") { $Result->show("danger", _("Name is mandatory"), true)
 # set update array
 $values = array("vrfId"=>@$_POST['vrfId'],
 				"name"=>$_POST['name'],
+				"rd"=>$_POST['rd'],
 				"description"=>$_POST['description']
 				);
 # append custom

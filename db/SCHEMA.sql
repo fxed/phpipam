@@ -229,7 +229,7 @@ DROP TABLE IF EXISTS `subnets`;
 CREATE TABLE `subnets` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `subnet` VARCHAR(255) NULL  DEFAULT NULL,
-  `mask` VARCHAR(255) NULL DEFAULT NULL,
+  `mask` VARCHAR(3) NULL DEFAULT NULL,
   `sectionId` INT(11)  UNSIGNED  NULL  DEFAULT NULL,
   `description` text,
   `firewallAddressObject` VARCHAR(100) NULL DEFAULT NULL,
@@ -318,6 +318,7 @@ CREATE TABLE `users` (
   `role` text CHARACTER SET utf8,
   `real_name` varchar(128) CHARACTER SET utf8 DEFAULT NULL,
   `email` varchar(64) CHARACTER SET utf8 DEFAULT NULL,
+  `pdns` SET('Yes','No')  NULL  DEFAULT 'No' ,
   `domainUser` binary(1) DEFAULT '0',
   `widgets` VARCHAR(1024)  NULL  DEFAULT 'statistics;favourite_subnets;changelog;top10_hosts_v4',
   `lang` INT(11) UNSIGNED  NULL  DEFAULT '9',
@@ -500,7 +501,8 @@ VALUES
 	(8, 'Last 5 informational logs', 'Shows list of last 5 informational logs', 'access_logs', NULL, 'yes', '6', 'yes', 'yes'),
 	(9, 'Last 5 warning / error logs', 'Shows list of last 5 warning and error logs', 'error_logs', NULL, 'yes', '6', 'yes', 'yes'),
 	(10,'Tools menu', 'Shows quick access to tools menu', 'tools', NULL, 'yes', '6', 'no', 'yes'),
-	(11,'IP Calculator', 'Shows IP calculator as widget', 'ipcalc', NULL, 'yes', '6', 'no', 'yes');
+	(11,'IP Calculator', 'Shows IP calculator as widget', 'ipcalc', NULL, 'yes', '6', 'no', 'yes'),
+	(12,'IP Request', 'IP Request widget', 'iprequest', NULL, 'no', '6', 'no', 'yes');
 
 
 # Dump of table deviceTypes

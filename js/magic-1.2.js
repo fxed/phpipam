@@ -129,7 +129,7 @@ function hidePopups() {
 	// IMPORTANT: also empty loaded content to avoid issues on popup reopening
 	$('#popupOverlay > div').empty();
 	$('#popupOverlay2 > div').empty();
-		
+
     $('.popup').fadeOut('fast');
     $('body').removeClass('stop-scrolling');        //enable scrolling back
     hideSpinner();
@@ -775,8 +775,20 @@ $('a.request_ipaddress').click(function () {
     }).fail(function(jqxhr, textStatus, errorThrown) { showError(jqxhr.statusText + "<br>Status: " + textStatus + "<br>Error: "+errorThrown); });
     return false;
 });
+//show request form from widget
+$(document).on("click", "button#requestIP_widget", function() {
+    showSpinner();
+	var subnetId = $('select#subnetId option:selected').attr('value');
+    var ip_addr = document.getElementById('ip_addr_widget').value;
+    $.post('app/tools/request-ip/index.php', {subnetId:subnetId, ip_addr:ip_addr}, function(data) {
+        $('div.popup_w500').html(data);
+        showPopup('popup_w500');
+        hideSpinner();
+    }).fail(function(jqxhr, textStatus, errorThrown) { showError(jqxhr.statusText + "<br>Status: " + textStatus + "<br>Error: "+errorThrown); });
+    return false;
+});
 //auto-suggest first available IP in selected subnet
-$(document).on("click", "select#subnetId", function() {
+$(document).on("change", "select#subnetId", function() {
     showSpinner();
     var subnetId = $('select#subnetId option:selected').attr('value');
     //post it via json to request_ip_first_free.php
@@ -836,6 +848,8 @@ $('.searchSubmit').click(function () {
     else														{ var subnets = "off"; }
     if($('#searchSelect input[name=vlans]').is(":checked"))		{ var vlans = "on"; }
     else														{ var vlans = "off"; }
+    if($('#searchSelect input[name=vrf]').is(":checked"))		{ var vrf = "on"; }
+    else														{ var vrf = "off"; }
     //lets try to detect IEto set location
     var ua = window.navigator.userAgent;
     var msie = ua.indexOf("MSIE ");
@@ -845,8 +859,8 @@ $('.searchSubmit').click(function () {
     else 																{ var base = ""; }
     //go to search page
     var prettyLinks = $('#prettyLinks').html();
-	if(prettyLinks=="Yes")	{ window.location = base + "tools/search/"+addresses+"/"+subnets+"/"+vlans+"/"+ip; }
-	else					{ window.location = base + "?page=tools&section=search&addresses="+addresses+"&subnets="+subnets+"&vlans="+vlans+"&ip="+ip; }
+	if(prettyLinks=="Yes")	{ window.location = base + "tools/search/"+addresses+"/"+subnets+"/"+vlans+"/"+vrf+"/"+ip; }
+	else					{ window.location = base + "?page=tools&section=search&addresses="+addresses+"&subnets="+subnets+"&vlans="+vlans+"&vrf="+vrf+"&ip="+ip; }
     return false;
 });
 //submit form - topmenu
@@ -860,7 +874,8 @@ $('form#userMenuSearch').submit(function () {
     else														{ var subnets = "off"; }
     if($('#searchSelect input[name=addresses]').is(":checked"))	{ var vlans = "on"; }
     else														{ var vlans = "off"; }
-
+    if($('#searchSelect input[name=vrf]').is(":checked"))		{ var vrf = "on"; }
+    else														{ var vrf = "off"; }
     //lets try to detect IEto set location
     var ua = window.navigator.userAgent;
     var msie = ua.indexOf("MSIE ");
@@ -870,11 +885,12 @@ $('form#userMenuSearch').submit(function () {
     else 																{ var base = ""; }
     //go to search page
     var prettyLinks = $('#prettyLinks').html();
-	if(prettyLinks=="Yes")	{ window.location = base + "tools/search/"+addresses+"/"+subnets+"/"+vlans+"/"+ip; }
-	else					{ window.location = base + "?page=tools&section=search&addresses="+addresses+"&subnets="+subnets+"&vlans="+vlans+"&ip="+ip; }
+	if(prettyLinks=="Yes")	{ window.location = base + "tools/search/"+addresses+"/"+subnets+"/"+vlans+"/"+vrf+"/"+ip; }
+	else					{ window.location = base + "?page=tools&section=search&addresses="+addresses+"&subnets="+subnets+"&vlans="+vlans+"&vrf="+vrf+"&ip="+ip; }
     return false;
 
 });
+
 //show/hide search select fields
 $(document).on("mouseenter", "#userMenuSearch", function(event){
     var object1 = $("#searchSelect");
@@ -1150,9 +1166,7 @@ $(document).on("click", ".userselect", function() {
 			}
 		});
 	}
-
 	hidePopup2();
-	hidePopup('popup_w500');
 
 	return false;
 });
@@ -1311,11 +1325,12 @@ $('.checkAuthMethod').click(function () {
 /*    instructions
 ***********************/
 $('#instructionsForm').submit(function () {
+    var csrf_cookie = $("#instructionsForm input[name=csrf_cookie]").val();
 	var instructions = CKEDITOR.instances.instructions.getData();
 	$('div.instructionsPreview').hide('fast');
 
     showSpinner();
-    $.post('app/admin/instructions/edit-result.php', {instructions:instructions}, function(data) {
+    $.post('app/admin/instructions/edit-result.php', {instructions:instructions, csrf_cookie:csrf_cookie}, function(data) {
         $('div.instructionsResult').html(data).fadeIn('fast');
         if(data.search("alert-danger")==-1 && data.search("error")==-1)     	{ $('div.instructionsResult').delay(2000).fadeOut('slow'); hideSpinner(); }
         else                             	{ hideSpinner(); }
@@ -1390,7 +1405,7 @@ $('#downloadLogs').click(function() {
 //logs clear
 $('#clearLogs').click(function() {
     showSpinner();
-    $.post('app/admin/logs/clear-logs.php', function(data) {
+    $.post('app/tools/logs/clear-logs.php', function(data) {
     	$('div.logs').html(data);
         hideSpinner();
     }).fail(function(jqxhr, textStatus, errorThrown) { showError(jqxhr.statusText + "<br>Status: " + textStatus + "<br>Error: "+errorThrown); });
@@ -1530,6 +1545,12 @@ $(".editRecord").click(function() {
 });
 $(document).on("click", "#editRecordSubmit", function() {
     submit_popup_data (".record-edit-result", "app/admin/powerDNS/record-edit-result.php", $('form#recordEdit').serialize());
+});
+$(document).on("click", "#editRecordSubmitDelete", function() {
+    var formData = $('form#recordEdit').serialize();
+    // replace edit action with delete
+    formData = formData.replace("action=edit", "action=delete");
+    submit_popup_data (".record-edit-result", "app/admin/powerDNS/record-edit-result.php", formData);
 });
 
 
@@ -2539,6 +2560,7 @@ $('button.dataExport').click(function () {
 	var implemented = ["vrf","vlan","subnets"]; var popsize = {};
 	popsize["subnets"] = "w700";
 	var dataType = $('select[name=dataType]').find(":selected").val();
+	hidePopups();
     //show popup window
 	if (implemented.indexOf(dataType) > -1) {
 		showSpinner();
@@ -2652,6 +2674,7 @@ $('button.dataImport').click(function () {
 	var implemented = ["vrf","vlan","subnets","recompute"]; var popsize = {};
 	popsize["subnets"] = "max";
 	var dataType = $('select[name=dataType]').find(":selected").val();
+	hidePopups();
     //show popup window, if implemented
 	if (implemented.indexOf(dataType) > -1) {
 		showSpinner();
@@ -2680,10 +2703,10 @@ $(document).on("click", "button#dataImportPreview", function() {
 	popsize["subnets"] = "max"; popsize["recompute"] = "max";
 	var dataType = $(this).attr('data-type');
     var importFields = $('form#selectImportFields').serialize();
+	hidePopups();
     //show popup window, if implemented
 	if (implemented.indexOf(dataType) > -1) {
 		showSpinner();
-		//console.log(dataType + " form import fields " + importFields);
 		$.post('app/admin/import-export/import-' + dataType + '-preview.php?' + importFields, function(data) {
 		if (popsize[dataType] !== undefined) {
 			$('div.popup_'+popsize[dataType]).html(data);
@@ -2708,6 +2731,7 @@ $(document).on("click", "button#dataImportSubmit", function() {
 	popsize["subnets"] = "max";	popsize["recompute"] = "max";
 	var dataType = $(this).attr('data-type');
     var importFields = $('form#selectImportFields').serialize();
+	hidePopups();
     //show popup window, if implemented
 	if (implemented.indexOf(dataType) > -1) {
 		showSpinner();
